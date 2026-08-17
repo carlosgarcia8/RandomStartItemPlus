@@ -1,9 +1,10 @@
 local json = require("json")
 
-local mod = RegisterMod("Random Start Item Plus", 1)
+local mod = RegisterMod("Random Start Item Plus Sexy", 1)
 
 local config = {
     ["NumberOfItems"] = 1,
+    ["OnlyPassiveItems"] = false,
     ["TreasurePool"] = true,
     ["ShopPool"] = false,
     ["BossPool"] = false,
@@ -63,18 +64,27 @@ function getItemPool()
     return itemPool
 end
 
+function getSpawnLocations(numberOfItems)
+    local centerX = 320
+    local centerY = 300
+    local spacing = 60
+
+    local locations = {}
+    local startX = centerX - (numberOfItems - 1) * spacing / 2
+
+    for i = 0, numberOfItems - 1 do
+        locations[i + 1] = Vector(startX + i * spacing, centerY)
+    end
+
+    return locations
+end
+
 function mod:spawnItem()
     if Game():GetFrameCount() == 1 then 
 
-        local spawnLocations = {
-            { Vector(320, 300) },
-            { Vector(280, 300), Vector(360, 300) },
-            { Vector(260, 300), Vector(320, 300), Vector(380, 300) },
-        }
-
         for i = 1, config["NumberOfItems"], 1 do
 
-            local spawnLocation = (spawnLocations[config["NumberOfItems"]])[i]
+            local spawnLocation = getSpawnLocations(config["NumberOfItems"])[i]
 
             Isaac.Spawn(EntityType.ENTITY_PICKUP, 
                 PickupVariant.PICKUP_COLLECTIBLE, 
@@ -113,8 +123,8 @@ if ModConfigMenu then
         return 1
     end
 
-    local sizes = {1, 2, 3}
-    ModConfigMenu.AddSetting("Random Start Item Plus", "General", {
+    local sizes = {1, 2, 3, 4, 5, 6}
+    ModConfigMenu.AddSetting("Random Start Item Plus Sexy", "General", {
         Type = ModConfigMenu.OptionType.NUMBER,
         CurrentSetting = function()
             return AnIndexOf(sizes, config["NumberOfItems"])
@@ -129,7 +139,25 @@ if ModConfigMenu then
         end,
     })
 
-    ModConfigMenu.AddSetting("Random Start Item Plus","Item Pools", {
+    ModConfigMenu.AddSetting("Random Start Item Plus Sexy", "General", {
+        Type = ModConfigMenu.OptionType.BOOLEAN,
+        CurrentSetting = function()
+            return config["OnlyPassiveItems"]
+        end,
+        Display = function()
+            local onOff = "False"
+
+            if config["OnlyPassiveItems"] then
+                onOff = "True"
+            end
+            return "Only Spawn Passive Items: " .. onOff
+        end,
+        OnChange = function(currentBool)
+            config["OnlyPassiveItems"] = currentBool
+        end,
+    })
+
+    ModConfigMenu.AddSetting("Random Start Item Plus Sexy","Item Pools", {
         Type = ModConfigMenu.OptionType.BOOLEAN,
         CurrentSetting = function()
             return config["TreasurePool"]
@@ -147,7 +175,7 @@ if ModConfigMenu then
         end,
     })
 
-    ModConfigMenu.AddSetting("Random Start Item Plus","Item Pools", {
+    ModConfigMenu.AddSetting("Random Start Item Plus Sexy","Item Pools", {
         Type = ModConfigMenu.OptionType.BOOLEAN,
         CurrentSetting = function()
             return config["ShopPool"]
@@ -165,7 +193,7 @@ if ModConfigMenu then
         end,
     })
 
-    ModConfigMenu.AddSetting("Random Start Item Plus","Item Pools", {
+    ModConfigMenu.AddSetting("Random Start Item Plus Sexy","Item Pools", {
         Type = ModConfigMenu.OptionType.BOOLEAN,
         CurrentSetting = function()
             return config["BossPool"]
@@ -183,7 +211,7 @@ if ModConfigMenu then
         end,
     })
 
-    ModConfigMenu.AddSetting("Random Start Item Plus","Item Pools", {
+    ModConfigMenu.AddSetting("Random Start Item Plus Sexy","Item Pools", {
         Type = ModConfigMenu.OptionType.BOOLEAN,
         CurrentSetting = function()
             return config["DevilPool"]
@@ -201,7 +229,7 @@ if ModConfigMenu then
         end,
     })
 
-    ModConfigMenu.AddSetting("Random Start Item Plus","Item Pools", {
+    ModConfigMenu.AddSetting("Random Start Item Plus Sexy","Item Pools", {
         Type = ModConfigMenu.OptionType.BOOLEAN,
         CurrentSetting = function()
             return config["AngelPool"]
@@ -219,7 +247,7 @@ if ModConfigMenu then
         end,
     })
 
-    ModConfigMenu.AddSetting("Random Start Item Plus","Item Pools", {
+    ModConfigMenu.AddSetting("Random Start Item Plus Sexy","Item Pools", {
         Type = ModConfigMenu.OptionType.BOOLEAN,
         CurrentSetting = function()
             return config["SecretPool"]
@@ -237,7 +265,7 @@ if ModConfigMenu then
         end,
     })
 
-    ModConfigMenu.AddSetting("Random Start Item Plus","Item Pools", {
+    ModConfigMenu.AddSetting("Random Start Item Plus Sexy","Item Pools", {
         Type = ModConfigMenu.OptionType.BOOLEAN,
         CurrentSetting = function()
             return config["LibraryPool"]
@@ -255,7 +283,7 @@ if ModConfigMenu then
         end,
     })
 
-    ModConfigMenu.AddSetting("Random Start Item Plus","Item Pools", {
+    ModConfigMenu.AddSetting("Random Start Item Plus Sexy","Item Pools", {
         Type = ModConfigMenu.OptionType.BOOLEAN,
         CurrentSetting = function()
             return config["UltraSecretPool"]
@@ -273,7 +301,7 @@ if ModConfigMenu then
         end,
     })
 
-    ModConfigMenu.AddSetting("Random Start Item Plus","Item Pools", {
+    ModConfigMenu.AddSetting("Random Start Item Plus Sexy","Item Pools", {
         Type = ModConfigMenu.OptionType.BOOLEAN,
         CurrentSetting = function()
             return config["PlanetariumPool"]
