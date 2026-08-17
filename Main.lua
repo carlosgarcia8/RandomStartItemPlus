@@ -84,7 +84,7 @@ function mod:getItemFromPool()
     local itemId = Game():GetItemPool():GetCollectible(itemPool)
 
     if config["OnlyPassiveItems"] then
-        while not Isaac.GetItemConfig():GetCollectible(itemId).Passive do
+        while Isaac.GetItemConfig():GetCollectible(itemId).Type ~= ItemType.ITEM_PASSIVE do
             itemId = Game():GetItemPool():GetCollectible(itemPool)
         end
     end
