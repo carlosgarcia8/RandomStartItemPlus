@@ -4,7 +4,8 @@ local mod = RegisterMod("Random Start Item Plus Sexy", 1)
 
 local config = {
     ["NumberOfItems"] = 1,
-    ["OnlyPassiveItems"] = false,
+    ["IncludePassiveItems"] = true,
+    ["IncludeActiveItems"] = true,
     ["TreasurePool"] = true,
     ["ShopPool"] = false,
     ["BossPool"] = false,
@@ -80,11 +81,22 @@ function getSpawnLocations(numberOfItems)
 end
 
 function mod:getItemFromPool()
+    local includePassive = config["IncludePassiveItems"]
+    local includeActive = config["IncludeActiveItems"]
+
+    if not includePassive and not includeActive then
+        return nil
+    end
+
     local itemPool = getItemPool()
     local itemId = Game():GetItemPool():GetCollectible(itemPool)
 
-    if config["OnlyPassiveItems"] then
+    if includePassive and not includeActive then
         while Isaac.GetItemConfig():GetCollectible(itemId).Type ~= ItemType.ITEM_PASSIVE do
+            itemId = Game():GetItemPool():GetCollectible(itemPool)
+        end
+    elseif includeActive and not includePassive then
+        while Isaac.GetItemConfig():GetCollectible(itemId).Type ~= ItemType.ITEM_ACTIVE do
             itemId = Game():GetItemPool():GetCollectible(itemPool)
         end
     end
@@ -97,12 +109,16 @@ function mod:spawnItem()
 
         for i = 1, config["NumberOfItems"], 1 do
 
-            local spawnLocation = getSpawnLocations(config["NumberOfItems"])[i]
+            local itemId = mod:getItemFromPool()
 
-            Isaac.Spawn(EntityType.ENTITY_PICKUP, 
-                PickupVariant.PICKUP_COLLECTIBLE, 
-                mod:getItemFromPool(),
-                spawnLocation, Vector(0,0), nil)
+            if itemId then
+                local spawnLocation = getSpawnLocations(config["NumberOfItems"])[i]
+
+                Isaac.Spawn(EntityType.ENTITY_PICKUP, 
+                    PickupVariant.PICKUP_COLLECTIBLE, 
+                    itemId,
+                    spawnLocation, Vector(0,0), nil)
+            end
         end
     end
 end
@@ -155,18 +171,36 @@ if ModConfigMenu then
     ModConfigMenu.AddSetting("Random Start Item Plus Sexy", "General", {
         Type = ModConfigMenu.OptionType.BOOLEAN,
         CurrentSetting = function()
-            return config["OnlyPassiveItems"]
+            return config["IncludePassiveItems"]
         end,
         Display = function()
             local onOff = "False"
 
-            if config["OnlyPassiveItems"] then
+            if config["IncludePassiveItems"] then
                 onOff = "True"
             end
-            return "Only Spawn Passive Items: " .. onOff
+            return "Include Passive Items: " .. onOff
         end,
         OnChange = function(currentBool)
-            config["OnlyPassiveItems"] = currentBool
+            config["IncludePassiveItems"] = currentBool
+        end,
+    })
+
+    ModConfigMenu.AddSetting("Random Start Item Plus Sexy", "General", {
+        Type = ModConfigMenu.OptionType.BOOLEAN,
+        CurrentSetting = function()
+            return config["IncludeActiveItems"]
+        end,
+        Display = function()
+            local onOff = "False"
+
+            if config["IncludeActiveItems"] then
+                onOff = "True"
+            end
+            return "Include Active Items: " .. onOff
+        end,
+        OnChange = function(currentBool)
+            config["IncludeActiveItems"] = currentBool
         end,
     })
 
