@@ -79,6 +79,19 @@ function getSpawnLocations(numberOfItems)
     return locations
 end
 
+function mod:getItemFromPool()
+    local itemPool = getItemPool()
+    local itemId = Game():GetItemPool():GetCollectible(itemPool)
+
+    if config["OnlyPassiveItems"] then
+        while not Isaac.GetItemConfig():GetCollectible(itemId).Passive do
+            itemId = Game():GetItemPool():GetCollectible(itemPool)
+        end
+    end
+
+    return itemId
+end
+
 function mod:spawnItem()
     if Game():GetFrameCount() == 1 then 
 
@@ -88,7 +101,7 @@ function mod:spawnItem()
 
             Isaac.Spawn(EntityType.ENTITY_PICKUP, 
                 PickupVariant.PICKUP_COLLECTIBLE, 
-                Game():GetItemPool():GetCollectible(getItemPool()),
+                mod:getItemFromPool(),
                 spawnLocation, Vector(0,0), nil)
         end
     end
