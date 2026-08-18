@@ -5,6 +5,7 @@ local mod = RegisterMod("Random Start Item Plus", 1)
 local config = {
     ["NumberOfItems"] = 1,
     ["IncludeActiveItems"] = true,
+    ["SpawnItemEveryFloor"] = false,
     ["TreasurePool"] = true,
     ["ShopPool"] = false,
     ["BossPool"] = false,
@@ -96,26 +97,35 @@ function mod:getItemFromPool()
     return itemId
 end
 
-function mod:spawnItem()
-    if Game():GetFrameCount() == 1 then 
+function mod:doSpawnItems()
+    for i = 1, config["NumberOfItems"], 1 do
+        local itemId = mod:getItemFromPool()
 
-        for i = 1, config["NumberOfItems"], 1 do
+        if itemId then
+            local spawnLocation = getSpawnLocations(config["NumberOfItems"])[i]
 
-            local itemId = mod:getItemFromPool()
-
-            if itemId then
-                local spawnLocation = getSpawnLocations(config["NumberOfItems"])[i]
-
-                Isaac.Spawn(EntityType.ENTITY_PICKUP, 
-                    PickupVariant.PICKUP_COLLECTIBLE, 
-                    itemId,
-                    spawnLocation, Vector(0,0), nil)
-            end
+            Isaac.Spawn(EntityType.ENTITY_PICKUP,
+                PickupVariant.PICKUP_COLLECTIBLE,
+                itemId,
+                spawnLocation, Vector(0,0), nil)
         end
     end
 end
 
-mod:AddCallback(ModCallbacks.MC_POST_UPDATE , mod.spawnItem)
+function mod:spawnItemOnUpdate()
+    if not config["SpawnItemEveryFloor"] and Game():GetFrameCount() == 1 then
+        mod:doSpawnItems()
+    end
+end
+
+function mod:spawnItemOnNewLevel()
+    if config["SpawnItemEveryFloor"] then
+        mod:doSpawnItems()
+    end
+end
+
+mod:AddCallback(ModCallbacks.MC_POST_UPDATE, mod.spawnItemOnUpdate)
+mod:AddCallback(ModCallbacks.MC_POST_NEW_LEVEL, mod.spawnItemOnNewLevel)
 
 local isGameStarted = false
 
@@ -175,6 +185,24 @@ if ModConfigMenu then
         end,
         OnChange = function(currentBool)
             config["IncludeActiveItems"] = currentBool
+        end,
+    })
+
+    ModConfigMenu.AddSetting("Random Start Item Plus", "General", {
+        Type = ModConfigMenu.OptionType.BOOLEAN,
+        CurrentSetting = function()
+            return config["SpawnItemEveryFloor"]
+        end,
+        Display = function()
+            local onOff = "False"
+
+            if config["SpawnItemEveryFloor"] then
+                onOff = "True"
+            end
+            return "Spawn Item Every Floor: " .. onOff
+        end,
+        OnChange = function(currentBool)
+            config["SpawnItemEveryFloor"] = currentBool
         end,
     })
 
