@@ -5,6 +5,7 @@ local mod = RegisterMod("Random Start Item Plus", 1)
 local config = {
     ["NumberOfItems"] = 1,
     ["IncludeActiveItems"] = true,
+    ["NoIdenticalItems"] = true,
     ["SpawnItemEveryFloor"] = false,
     ["TreasurePool"] = true,
     ["ShopPool"] = false,
@@ -82,19 +83,48 @@ end
 
 function mod:getItemFromPool()
     local includeActive = config["IncludeActiveItems"]
-
     local itemPool = getItemPool()
-    local itemId = Game():GetItemPool():GetCollectible(itemPool)
 
-    if includeActive then
+    if not config["NoIdenticalItems"] then
+        local itemId = Game():GetItemPool():GetCollectible(itemPool)
+        if includeActive then
+            return itemId
+        else
+            while itemId and Isaac.GetItemConfig():GetCollectible(itemId).Type ~= ItemType.ITEM_PASSIVE do
+                itemId = Game():GetItemPool():GetCollectible(itemPool)
+            end
+        end
         return itemId
-    else
-        while itemId and Isaac.GetItemConfig():GetCollectible(itemId).Type ~= ItemType.ITEM_PASSIVE do
-            itemId = Game():GetItemPool():GetCollectible(itemPool)
+    end
+
+    local game = Game()
+    local numPlayers = game:GetNumPlayers()
+
+    local function playerHasItem(itemId)
+        for i = 0, numPlayers - 1 do
+            if Isaac.GetPlayer(i):HasCollectible(itemId) then
+                return true
+            end
+        end
+        return false
+    end
+
+    for _ = 1, 100 do
+        local itemId = game:GetItemPool():GetCollectible(itemPool, true, Random())
+
+        if not itemId or itemId == CollectibleType.COLLECTIBLE_NULL then
+            return nil
+        end
+
+        local itemCfg = Isaac.GetItemConfig():GetCollectible(itemId)
+        local typeOk = includeActive or (itemCfg and itemCfg.Type == ItemType.ITEM_PASSIVE)
+
+        if typeOk and not playerHasItem(itemId) then
+            return itemId
         end
     end
 
-    return itemId
+    return nil
 end
 
 function mod:doSpawnItems()
@@ -185,6 +215,24 @@ if ModConfigMenu then
         end,
         OnChange = function(currentBool)
             config["IncludeActiveItems"] = currentBool
+        end,
+    })
+
+    ModConfigMenu.AddSetting("Random Start Item Plus", "General", {
+        Type = ModConfigMenu.OptionType.BOOLEAN,
+        CurrentSetting = function()
+            return config["NoIdenticalItems"]
+        end,
+        Display = function()
+            local onOff = "False"
+
+            if config["NoIdenticalItems"] then
+                onOff = "True"
+            end
+            return "No Identical Items: " .. onOff
+        end,
+        OnChange = function(currentBool)
+            config["NoIdenticalItems"] = currentBool
         end,
     })
 
