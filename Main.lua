@@ -7,6 +7,7 @@ local config = {
     ["IncludeActiveItems"] = true,
     ["NoIdenticalItems"] = true,
     ["SpawnItemEveryFloor"] = false,
+    ["DecreaseNumberOfItems"] = false,
     ["TreasurePool"] = true,
     ["ShopPool"] = false,
     ["BossPool"] = false,
@@ -127,12 +128,15 @@ function mod:getItemFromPool()
     return nil
 end
 
-function mod:doSpawnItems()
-    for i = 1, config["NumberOfItems"], 1 do
+local currentNumberOfItems = 0
+
+function mod:doSpawnItems(count)
+    count = count or config["NumberOfItems"]
+    for i = 1, count, 1 do
         local itemId = mod:getItemFromPool()
 
         if itemId then
-            local spawnLocation = getSpawnLocations(config["NumberOfItems"])[i]
+            local spawnLocation = getSpawnLocations(count)[i]
 
             Isaac.Spawn(EntityType.ENTITY_PICKUP,
                 PickupVariant.PICKUP_COLLECTIBLE,
@@ -150,7 +154,14 @@ end
 
 function mod:spawnItemOnNewLevel()
     if config["SpawnItemEveryFloor"] then
-        mod:doSpawnItems()
+        if config["DecreaseNumberOfItems"] then
+            if currentNumberOfItems > 0 then
+                mod:doSpawnItems(currentNumberOfItems)
+                currentNumberOfItems = currentNumberOfItems - 1
+            end
+        else
+            mod:doSpawnItems()
+        end
     end
 end
 
@@ -163,6 +174,7 @@ function mod.onGameStart()
     if mod:HasData() then
 		config = json.decode(Isaac.LoadModData(mod))
 	end
+    currentNumberOfItems = config["NumberOfItems"]
 end
 
 mod:AddCallback(ModCallbacks.MC_POST_GAME_STARTED, mod.onGameStart)
@@ -251,6 +263,24 @@ if ModConfigMenu then
         end,
         OnChange = function(currentBool)
             config["SpawnItemEveryFloor"] = currentBool
+        end,
+    })
+
+    ModConfigMenu.AddSetting("Random Start Item Plus", "General", {
+        Type = ModConfigMenu.OptionType.BOOLEAN,
+        CurrentSetting = function()
+            return config["DecreaseNumberOfItems"]
+        end,
+        Display = function()
+            local onOff = "False"
+
+            if config["DecreaseNumberOfItems"] then
+                onOff = "True"
+            end
+            return "Decrease Items Each Floor: " .. onOff
+        end,
+        OnChange = function(currentBool)
+            config["DecreaseNumberOfItems"] = currentBool
         end,
     })
 
