@@ -129,6 +129,7 @@ function mod:getItemFromPool()
 end
 
 local currentNumberOfItems = 0
+local isNewRun = false
 
 function mod:doSpawnItems(count)
     count = count or config["NumberOfItems"]
@@ -147,8 +148,20 @@ function mod:doSpawnItems(count)
 end
 
 function mod:spawnItemOnUpdate()
-    if not config["SpawnItemEveryFloor"] and Game():GetFrameCount() == 1 then
-        mod:doSpawnItems()
+    if Game():GetFrameCount() == 1 then
+        if not config["SpawnItemEveryFloor"] then
+            mod:doSpawnItems()
+        elseif isNewRun then
+            isNewRun = false
+            if config["DecreaseNumberOfItems"] then
+                if currentNumberOfItems > 0 then
+                    mod:doSpawnItems(currentNumberOfItems)
+                    currentNumberOfItems = currentNumberOfItems - 1
+                end
+            else
+                mod:doSpawnItems()
+            end
+        end
     end
 end
 
@@ -173,7 +186,7 @@ mod:AddCallback(ModCallbacks.MC_POST_NEW_LEVEL, mod.spawnItemOnNewLevel)
 
 local isGameStarted = false
 
-function mod.onGameStart(isContinued)
+function mod.onGameStart()
     if mod:HasData() then
         local savedConfig = json.decode(Isaac.LoadModData(mod))
         for k, v in pairs(savedConfig) do
@@ -181,19 +194,7 @@ function mod.onGameStart(isContinued)
         end
     end
     currentNumberOfItems = config["NumberOfItems"]
-
-    -- MC_POST_NEW_LEVEL fires before this callback on a new run, so floor 1
-    -- must be handled here to guarantee config is already loaded.
-    if not isContinued and config["SpawnItemEveryFloor"] then
-        if config["DecreaseNumberOfItems"] then
-            if currentNumberOfItems > 0 then
-                mod:doSpawnItems(currentNumberOfItems)
-                currentNumberOfItems = currentNumberOfItems - 1
-            end
-        else
-            mod:doSpawnItems()
-        end
-    end
+    isNewRun = true
 end
 
 mod:AddCallback(ModCallbacks.MC_POST_GAME_STARTED, mod.onGameStart)
